@@ -1,0 +1,29 @@
+import java.net.*;
+import java.io.*;
+import java.util.*;
+class Hello
+{
+public static void main(String [] args) throws UnknownHostException,IOException
+{
+InetAddress inet;
+String ip;
+Scanner sc=new Scanner(System.in);
+
+
+ip=args[0];
+InetAddress ipb=InetAddress.getByName(ip);
+byte[] b=ipb.getAddress();
+inet=InetAddress.getByAddress(b);
+
+
+System.out.println("Trying to connect");
+if(inet.isReachable(5000))
+{
+System.out.println("Machine Is Working");
+}
+else
+{
+System.out.println("Machine Is Not Working");
+}
+}
+}

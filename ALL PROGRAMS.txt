@@ -1,0 +1,932 @@
+
+RMI
+
+Interface                                   //RMICalIntf.java
+
+import java.rmi.*;
+import java.rmi.server.*;
+public interface RMICalIntf extends Remote  
+{                            //Declaring the methods to be implemented
+          double add(double a,double b) throws RemoteException;
+          double sub(double a,double b) throws RemoteException;
+          double mul(double a,double b) throws RemoteException;
+          double div(double a,double b) throws RemoteException;
+}
+
+Implementation                            //RMICalImpl.java
+
+import java.rmi.*;
+import java.io.*;
+import java.rmi.server.*;
+
+public class RMICalImpl extends UnicastRemoteObject implements RMICalIntf
+{                                     //Defining the methods declared in the interface
+RMICalImpl() throws RemoteException
+{
+}
+          public double add(double a, double b)throws RemoteException
+{
+return(a+b);
+             }
+          public double sub(double a,double b)throws RemoteException
+{
+                   return(a-b);
+                   }
+          public double mul(double a,double b)throws RemoteException
+{
+                   return(a*b);
+                   }    
+          public double div(double a,double b)throws RemoteException
+{
+                   return(a/b);
+                   } 
+}
+
+Server side                               //RMICalServer.java
+
+import java.rmi.*;
+public class RMICalServer
+{
+          public static void main(String args[])
+{
+                   try
+{                            //creating implementation object
+RMICalImpl si = new RMICalImpl();
+                             Naming.rebind("calserver",si);
+                             }
+catch(Exception e){}
+                   }
+          }
+
+Client  side                               //RMICalClient.java
+
+import javax.swing.*;
+import java.awt.*;
+import java.rmi.*;
+import java.awt.event.*;
+import java.io.*;
+public class RMICalClient extends JFrame implements ActionListener
+{
+          double n1 = 0.0;
+          double  d1;
+double n2 = 0.0;
+          JButton jb[] = new JButton[21];
+          JTextField tf;
+          Container con;
+          int button,i;
+          String str;
+          String num="";
+          JPanel tp,bp;                            //declaring 2 panels for textfield and buttons
+          public RMICalClient()
+{
+                   setTitle("calculator");
+                   tp = new JPanel();
+                   bp = new JPanel();
+                   tf = new JTextField(22);
+                   tf.setEditable(false);
+                   con = getContentPane();
+                   bp.setLayout(new GridLayout(5,4));
+                   tp.add(tf);
+                   con.add(tp,"North");                  //placing the textfield in the north
+                   for(int i=0;i<10;i++)                    //inserting and numbering buttons
+{
+                        jb[i] = new JButton(""+i);
+}
+                   jb[10] = new JButton("+");
+                   jb[11] = new JButton("-");
+                   jb[12] = new JButton("*");
+                   jb[13] = new JButton("/");
+                   jb[14] = new JButton("clear");
+                   jb[15] = new JButton(".");
+                   jb[16] = new JButton("=");
+                   for(int i = 0;i<17;i++)
+{
+                             jb[i].addActionListener(this);
+                             bp.add(jb[i]);
+                             }
+                   con.add(bp,"Center"); //placing the panel with the buttons in the center
+                   setDefaultCloseOperation(EXIT_ON_CLOSE);
+                   }     
+public void actionPerformed(ActionEvent ae)
+{  
+str = ae.getActionCommand();             //get the text on the button
+                   System.out.println(str);
+                   for(int i=0;i<10;i++)
+{
+                          if(ae.getSource()==jb[i])
+{
+num = num+str;     //if the button clicked is a number,
+                                      tf.setText(num);     // concatenate it to the string “num”
+                             }
+                   }
+                   if((ae.getSource())==jb[15])                 //if the button pressed is “.”
+{
+num = num+str;                         //concatenate it to num
+                             tf.setText(num);
+                             }
+                   for(int i=10;i<14;i++)
+{
+                             if(ae.getSource()==jb[i])            //if the button is an operator
+{
+button = i-9;          //store the operator in “button”
+                                      if(num!="")             //obtain the first operand
+{
+                                      tf.setText("");
+                                      n1 = Double.parseDouble(num);    //convert string in to
+                                       num="";                           //double & store it in “n1”
+                                      }
+Else
+{
+                                                          tf.setText("");
+                                                }
+}
+                             }
+                             if(ae.getSource()==jb[16])          //if the button pressed is “=”
+{
+                                      if(!(tf.getText().equals("")))
+{
+                                                tf.setText("");
+n2 = Double.parseDouble(num);//store 2nd operand
+//in n2
+                                                num = "";
+                                                          try
+{
+                                                          String url = "rmi://localhost/calserver";
+                                                          RMICalIntf a =(RMICalIntf) Naming.lookup(url);
+                                                          switch(button)
+{
+                                                                   case 1:
+                                                                                      d1 = a.add(n1,n2);
+                                                                                      break;  
+                                                                             case 2:
+                                                                                      d1 = a.sub(n1,n2);
+                                                                                      break;
+                                                                   case 3:
+                                                                                      d1 = a.mul(n1,n2);
+                                                                                      break;
+                                                                   case 4:
+                                                                                      d1 = a.div(n1,n2);
+                                                                                      break;
+                                                                             default:
+                                                                                      d1 = 0.0;
+                                                                   }
+str = String.valueOf(d1);          //convert the //value to string
+                                                          tf.setText(str);       //print the value
+                                                                   }
+catch(Exception e){}
+                                                          }
+Else
+{
+                                      tf.setText("");
+                                                }
+                             }
+                             if(ae.getSource()==jb[14]) //if button pressed is “CLEAR”
+{
+                                                tf.setText("");
+                                                num = "";
+                                                n1=0.0;
+                                                n2=0.0;
+                                                button=0;
+                                      }
+                             }
+public static void main(String args[])
+{
+                   JFrame f = new RMICalClient();
+                   f.setSize(200,200);
+                   f.setVisible(true);
+                   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+HELLO
+
+
+import java.net.*;
+import java.io.*;
+import java.util.*;
+class Hello
+{
+public static void main(String [] args) throws UnknownHostException,IOException
+{
+InetAddress inet;
+String ip;
+
+ip=args[0];
+InetAddress ipb=new InetAddress.getByName(ip);
+byte[] b=new ipb.getAddress();
+inet=InetAddress.getByAddress(b);
+
+
+System.out.println("Trying to connect");
+if(inet.isReachable(5000))
+{
+System.out.println("Machine Is Working");
+}
+else
+{
+System.out.println("Machine Is Not Working");
+}
+}
+}
+
+///////////////////////////////////////////////////////
+ECHO
+
+import java.io.*;
+import java.net.*;
+import java.util.Calendar;
+class Echo
+{
+public static void main(String args[])throws Exception
+{
+String str;
+int c=0;
+long t1,t2;
+Socket s=new Socket();
+String ip=args[0];
+try
+{
+s.connect(new InetSocketAddress(ip,80));
+System.out.println("Connected");
+}
+catch(Exception e)
+{
+System.out.println(e);
+}
+
+DataInputStream dis=new DataInputStream(s.getInputStream());
+PrintStream out=new PrintStream(s.getOutputStream());
+
+t1=System.currentTimeMillis();
+str="Hello";
+out.println(str);
+System.out.println(dis.readLine());
+t2=System.currentTimeMillis();
+System.out.println("RTT="+(t2-t1)+"ms");
+
+s.close();
+}
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+UDP chatting socket
+
+
+import java.net.*;
+import java.io.*;
+import java.util.*;
+
+public class ServerUdp{
+
+    public static void main(String [] args) throws Exception{
+    
+     DatagramSocket  ds = new DatagramSocket(3456);
+     byte receiveByte[]= new byte[1024];
+     byte sendByte[] = new byte[1024];
+       
+     while(true)
+    {
+      //receive 
+        DatagramPacket receivePacket = new DatagramPacket(receiveByte,receiveByte.length);
+        ds.receive(receivePacket);
+ 
+        String receivestr = new String(receivePacket.getData());
+        System.out.println("CLIENT: \n "+ receivestr);
+  
+        InetAddress ia1 =InetAddress.getLocalHost();
+        
+      //send
+              
+              DataInputStream din = new DataInputStream(System.in);
+              String sendstr= din.readLine();
+              sendByte = sendstr.getBytes();
+              DatagramPacket sendpacket = new DatagramPacket(sendByte,sendByte.length,ia1,receivePacket.getPort());
+              ds.send(sendpacket);
+
+              
+     }
+
+    }
+
+}
+
+
+
+
+import java.net.*;
+import java.io.*;
+import java.util.*;
+
+public class ClientUdp {
+
+ public static void main(String[] args) throws Exception{
+      
+        DatagramSocket ds = new DatagramSocket();
+        InetAddress ia =InetAddress.getLocalHost();
+        byte sendByte[]=new byte[1024];
+        byte receiveByte[] = new byte[1024]; 
+  
+        while(true)
+       {
+       
+  
+         //send 
+          
+          DataInputStream din = new DataInputStream(System.in);
+          System.out.println("Client:");
+          String sendstr = din.readLine(); 
+          sendByte = sendstr.getBytes(); 
+          DatagramPacket sendpacket = new DatagramPacket(sendByte,sendByte.length,ia,3456);
+          ds.send(sendpacket);
+         
+      
+         //receive
+          
+          DatagramPacket receivepacket = new DatagramPacket(recievePacket,receivePacket.length);
+          ds.receive(receivePacket);
+          String receivestr = new String(recievePacket.getData());
+          System.out.println("SERVER: \n "+receivestr);
+
+        
+
+
+ }
+
+ }
+
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+
+ TCP chatting socket
+          
+           TCP Client
+
+import java.net.*;  
+import java.io.*;  
+class MyClient{  
+public static void main(String args[])throws Exception{  
+Socket s=new Socket("localhost",3333);  
+DataInputStream din=new DataInputStream(s.getInputStream());  
+DataOutputStream dout=new DataOutputStream(s.getOutputStream());  
+BufferedReader br=new BufferedReader(new InputStreamReader(System.in));  
+  
+String str="",str1="";  
+while(!str.equals("stop")){  
+ 
+ str=br.readLine();  
+ dout.writeUTF(str);  
+ dout.flush();  
+ 
+ str1=din.readUTF();  
+ System.out.println("Server says: "+str1);  
+}  
+  
+dout.close();  
+s.close();  
+}}  
+
+		TCP Server
+
+import java.net.*;  
+import java.io.*;  
+class MyServer{  
+public static void main(String args[])throws Exception{
+  
+ServerSocket ss=new ServerSocket(3333);  
+
+Socket s=ss.accept();  
+
+DataInputStream din=new DataInputStream(s.getInputStream());   
+DataOutputStream dout=new DataOutputStream(s.getOutputStream()); 
+BufferedReader br=new BufferedReader(new InputStreamReader(System.in));  
+  
+String str="",str1="";  
+
+while(!str.equals("stop")){  
+ 
+ str=din.readUTF(); 
+ System.out.printlv("client says:"+str);  
+ 
+ str1=br.readLine();
+ dout.writeUTF(str1);
+ dout.flush();  
+ }  
+din.close();  
+s.close();  
+ss.close();  
+}}  
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+
+
+11 wired
+
+
+
+set ns [new Simulator]
+
+$ns color 0 blue
+$ns color 1 red
+$ns color 2 white
+
+set n0 [$ns node]
+set n1 [$ns node]
+set n2 [$ns node]
+set n3 [$ns node]
+set n4 [$ns node]
+set n5 [$ns node]
+
+
+set f [open out.tr w]
+$ns trace-all $f
+set nf [open out.nam w]
+$ns namtrace-all $nf
+
+$ns duplex-link $n1 $n2 5Mb 2ms DropTail
+$ns duplex-link $n1 $n0 5Mb 2ms DropTail
+$ns duplex-link $n1 $n3 1.5Mb 10ms DropTail
+$ns duplex-link $n3 $n4 1.5Mb 10ms DropTail
+$ns duplex-link $n3 $n5 1.5Mb 10ms DropTail
+
+$ns duplex-link-op $n1 $n2 orient left-down
+$ns duplex-link-op $n1 $n0 orient left-up
+$ns duplex-link-op $n1 $n3 orient right
+$ns duplex-link-op $n3 $n4 orient right-up
+$ns duplex-link-op $n3 $n5 orient right-down
+
+
+set udp0 [new Agent/UDP]
+$ns attach-agent $n0 $udp0
+set cbr0 [new Application/Traffic/CBR]
+$cbr0 attach-agent $udp0
+
+set udp1 [new Agent/UDP]
+$ns attach-agent $n3 $udp1
+$udp1 set class_ 1
+set cbr1 [new Application/Traffic/CBR]
+$cbr1 attach-agent $udp1
+
+set null0 [new Agent/Null]
+$ns attach-agent $n3 $null0
+
+set null1 [new Agent/Null]
+$ns attach-agent $n1 $null1
+
+$ns connect $udp0 $null0
+$ns connect $udp1 $null1
+
+$ns at 1.0 "$cbr0 start"
+$ns at 1.1 "$cbr1 start"
+
+set tcp [new Agent/TCP]
+$tcp set class_ 2
+set sink [new Agent/TCPSink]
+$ns attach-agent $n0 $tcp
+$ns attach-agent $n3 $sink
+$ns connect $tcp $sink
+set ftp [new Application/FTP]
+$ftp attach-agent $tcp
+$ns at 1.2 "$ftp start"
+
+$ns at 1.35 "$ns detach-agent $n0 $tcp ; $ns detach-agent $n3 $sink"
+
+puts [$cbr0 set packetSize_]
+puts [$cbr0 set interval_]
+
+$ns at 3.0 "finish"
+
+proc finish {} {
+	global ns f nf
+	$ns flush-trace
+	close $f
+	close $nf
+
+	puts "running nam..."
+	exec nam out.nam &
+	exit 0
+}
+
+$ns run
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+mobile wireless 
+
+
+set val(chan)    Channel/WirelessChannel  ;#Channel type
+set val(prop)    Propagation/TwoRayGround ;#radio-propagation model
+set val(prop1)   Propagation/Shadowing    ;
+set val(netif)   Phy/WirelessPhy          ;#network interface type
+set val(mac)     Mac/802_11               ;#MAC_type
+set val(ifq)     Queue/DropTail/PriQueue  ;#interface queue type
+set val(ll)      LL                       ;#link layer type
+set val(ant)     Antenna/OmniAntenna      ;#antenna model
+set val(ifqlen)  50                       ;#max packet in ifq
+set val(ifqlen1) 25                       ;
+set val(nn)      6                        ;#number of nodes
+set val(rp)      DSR                      ;#routin protcol adhoc on demand distance vector rouitn protocol
+set val(rp1)     AODV                     ;
+set val(x)       500
+set val(y)       500
+
+
+#Create simulator object 
+set ns [new Simulator]
+
+
+#create tracefile and namfile
+set tracefile [open wireless.tr w]
+$ns trace-all $tracefile
+
+set namfile [open wireless.nam w]
+$ns namtrace-all-wireless $namfile $val(x) $val(y)
+
+#create topography 
+set topo [new Topography]
+$topo load_flatgrid $val(x) $val(y)
+
+#god creation 
+create-god $val(nn)
+
+set channel1 [new $val(chan)]
+set channel2 [new $val(chan)]
+
+
+#configure the nodes
+$ns node-config -adhocRouting $val(rp) \
+                -llType $val(ll) \
+                -macType $val(mac) \
+                -ifqType $val(ifq) \
+                -ifqLen $val(ifqlen) \
+                -antType $val(ant) \
+                -propType $val(prop) \
+                -phyType $val(netif) \
+                -topoInstance $topo \
+                -agentTrace ON \
+                -macTrace ON \
+                -routerTrace ON \
+                -movementTrace ON \
+                -channel $channel1
+
+set n0 [$ns node]
+set n1 [$ns node]
+
+$ns node-config -channel $channel2 \
+                -adhocRouting $val(rp1) \
+                -propType $val(prop1) \
+                -ifqLen $val(ifqlen1)
+                
+
+set n2 [$ns node]
+set n3 [$ns node]
+set n4 [$ns node]
+set n5 [$ns node]
+
+
+$n0 random-motion 0
+$n1 random-motion 0
+$n2 random-motion 0
+$n3 random-motion 0
+$n4 random-motion 0
+$n5 random-motion 0
+
+#size of the node 
+$ns initial_node_pos $n0 20
+$ns initial_node_pos $n1 20
+$ns initial_node_pos $n2 20
+$ns initial_node_pos $n3 20
+$ns initial_node_pos $n4 20
+$ns initial_node_pos $n5 50
+
+#initial coordinatess of the nodes
+
+$n0 set X_ 10.0
+$n0 set Y_ 20.0
+$n0 set Z_ 0.0
+
+$n1 set X_ 210.0
+$n1 set Y_ 230.0
+$n1 set Z_ 0.0
+
+$n2 set X_ 100.0
+$n2 set Y_ 200.0
+$n2 set Z_ 0.0
+
+$n3 set X_ 430.0
+$n3 set Y_ 230.0
+$n3 set Z_ 0.0
+
+$n4 set X_ 270.0
+$n4 set Y_ 150.0
+$n4 set Z_ 0.0
+
+$n5 set X_ 270.0
+$n5 set Y_ 120.0
+$n5 set Z_ 0.0
+
+
+#mobility of the nodes
+#at what time? whic node? wheree to ?at what speed?
+#$ns at 1.0 "$n1 setdest 490.0 340.0 25.0"
+#$ns at 1.0 "$n4 setdest 300.0 130.0 5.0"
+#$ns at 1.0 "$n5 setdest 190.0 440.0 15.0"
+
+
+#the nodes can move any number of time at any location during the simulation(runtime)
+#$ns at 20.0 "$n5 setdest 100.0 200.0 30.0"
+
+#creation of agents
+set tcp [new Agent/TCP]
+set sink [new Agent/TCPSink] 
+$ns attach-agent $n0 $tcp
+$ns attach-agent $n5 $sink
+$ns connect $tcp $sink
+set ftp [new Application/FTP]
+$ftp attach-agent $tcp
+$ns at 1.0 "$ftp start"
+
+set udp [new Agent/UDP]
+set null [new Agent/Null] 
+$ns attach-agent $n2 $udp
+$ns attach-agent $n3 $null
+$ns connect $udp $null
+set cbr [new Application/Traffic/CBR]
+$cbr attach-agent $udp
+
+$ns at 1.0 "$cbr start"
+
+$ns at 30.0 "finish"
+
+proc finish {} {
+
+    global ns tracefile namfile
+    $ns flush-trace
+    close $tracefile
+    close $namfile
+    exec nam wireless.nam &
+    exit 0
+}
+
+$ns run
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+
+
+12 wireless static
+
+# This script is created by NSG2 beta1
+# <http://wushoupong.googlepages.com/nsg>
+
+#===================================
+#     Simulation parameters setup
+#===================================
+set val(chan)   Channel/WirelessChannel    ;# channel type
+set val(prop)   Propagation/TwoRayGround   ;# radio-propagation model
+set val(netif)  Phy/WirelessPhy            ;# network interface type
+set val(mac)    Mac/802_11                 ;# MAC type
+set val(ifq)    Queue/DropTail/PriQueue    ;# interface queue type
+set val(ll)     LL                         ;# link layer type
+set val(ant)    Antenna/OmniAntenna        ;# antenna model
+set val(ifqlen) 50                         ;# max packet in ifq
+set val(nn)     4                          ;# number of mobilenodes
+set val(rp)     DSDV                       ;# routing protocol
+set val(x)      1173                      ;# X dimension of topography
+set val(y)      100                      ;# Y dimension of topography
+set val(stop)   10.0                         ;# time of simulation end
+
+#===================================
+#        Initialization        
+#===================================
+#Create a ns simulator
+set ns [new Simulator]
+
+#Setup topography object
+set topo       [new Topography]
+$topo load_flatgrid $val(x) $val(y)
+create-god $val(nn)
+
+#Open the NS trace file
+set tracefile [open out.tr w]
+$ns trace-all $tracefile
+
+#Open the NAM trace file
+set namfile [open out.nam w]
+$ns namtrace-all $namfile
+$ns namtrace-all-wireless $namfile $val(x) $val(y)
+set chan [new $val(chan)];#Create wireless channel
+
+#===================================
+#     Mobile node parameter setup
+#===================================
+$ns node-config -adhocRouting  $val(rp) \
+                -llType        $val(ll) \
+                -macType       $val(mac) \
+                -ifqType       $val(ifq) \
+                -ifqLen        $val(ifqlen) \
+                -antType       $val(ant) \
+                -propType      $val(prop) \
+                -phyType       $val(netif) \
+                -channel       $chan \
+                -topoInstance  $topo \
+                -agentTrace    ON \
+                -routerTrace   ON \
+                -macTrace      ON \
+                -movementTrace ON
+
+#===================================
+#        Nodes Definition        
+#===================================
+#Create 4 nodes
+set n0 [$ns node]
+$n0 set X_ 100
+$n0 set Y_ 200
+$n0 set Z_ 0.0
+$ns initial_node_pos $n0 20
+
+set n1 [$ns node]
+$n1 set X_ 100
+$n1 set Y_ 129
+$n1 set Z_ 0.0
+$ns initial_node_pos $n1 20
+
+set n2 [$ns node]
+$n2 set X_ 100
+$n2 set Y_ 350
+$n2 set Z_ 0.0
+$ns initial_node_pos $n2 20
+
+set n3 [$ns node]
+$n3 set X_ 90
+$n3 set Y_ 93
+$n3 set Z_ 0.0
+$ns initial_node_pos $n3 20
+
+#===================================
+#        Agents Definition        
+#===================================
+#Setup a TCP connection
+set tcp0 [new Agent/TCP]
+$ns attach-agent $n0 $tcp0
+set sink5 [new Agent/TCPSink]
+$ns attach-agent $n3 $sink5
+$ns connect $tcp0 $sink5
+$tcp0 set packetSize_ 15000
+
+#Setup a TCP connection
+set tcp1 [new Agent/TCP]
+$ns attach-agent $n1 $tcp1
+set sink4 [new Agent/TCPSink]
+$ns attach-agent $n3 $sink4
+$ns connect $tcp1 $sink4
+$tcp1 set packetSize_ 15000
+
+#Setup a TCP connection
+set tcp2 [new Agent/TCP]
+$ns attach-agent $n2 $tcp2
+set sink3 [new Agent/TCPSink]
+$ns attach-agent $n3 $sink3
+$ns connect $tcp2 $sink3
+$tcp2 set packetSize_ 15000
+
+
+#===================================
+#        Applications Definition        
+#===================================
+#Setup a FTP Application over TCP connection
+set ftp0 [new Application/FTP]
+$ftp0 attach-agent $tcp0
+$ns at 1.0 "$ftp0 start"
+$ns at 2.0 "$ftp0 stop"
+
+#Setup a FTP Application over TCP connection
+set ftp1 [new Application/FTP]
+$ftp1 attach-agent $tcp1
+$ns at 1.0 "$ftp1 start"
+$ns at 4.0 "$ftp1 stop"
+
+#Setup a FTP Application over TCP connection
+set ftp2 [new Application/FTP]
+$ftp2 attach-agent $tcp2
+$ns at 1.0 "$ftp2 start"
+$ns at 4.0 "$ftp2 stop"
+
+
+#===================================
+#        Termination        
+#===================================
+#Define a 'finish' procedure
+proc finish {} {
+    global ns tracefile namfile
+    $ns flush-trace
+    close $tracefile
+    close $namfile
+    exec nam out.nam &
+    exit 0
+}
+for {set i 0} {$i < $val(nn) } { incr i } {
+    $ns at $val(stop) "\$n$i reset"
+}
+$ns at $val(stop) "$ns nam-end-wireless $val(stop)"
+$ns at $val(stop) "finish"
+$ns at $val(stop) "puts \"done\" ; $ns halt"
+$ns run
+////////////////////////////////////////////////////////////////////////////////////
+
+WIRELESS AWK FILE FOR PACKETLOSS,THROUGHPUT,LATENCY
+
+BEGIN{
+drop=0
+stime=0
+ftime=0
+flag=0
+fsize=0
+throughput=0
+latency=0
+drop=0
+}
+{
+if($1 == "r" )
+ {
+  fsize+=$6
+  if(flag==0)
+	{
+	stime=$2
+	flag=1
+	}
+  ftime=$2
+ }
+if($1== "d")
+	{
+	drop++
+	}
+}
+END{
+latency=ftime-stime
+throughput=(fsize*8)/latency
+printf("\n latency:%f",latency)
+printf("\n throughput:%f",throughput)
+printf("\n packet loss:%d",drop)
+}
+
+//////////////////////////////////////////////////////////////////////
+FOR WIRED NS Script dumbell awk file
+
+BEGIN{
+stime=0
+ftime=0
+flag=0
+fsize=0
+throughput=0
+latency=0
+drop=0
+}
+{
+if($1 == "r" )
+{
+fsize+=$6
+if(flag==0)
+{
+stime=$2
+flag=1
+}
+ftime=$2
+}
+if($1 == "d")
+{
+drop++
+}
+}
+END{
+latency=ftime-stime
+throughput=(fsize*8)/latency
+printf("\n latency:%f",latency)
+printf("\n throughput:%f",throughput)
+printf("\n packet loss :%d",drop);
+}
+
+USUAGE : awk -f awkfilename.awk tracefilename.tr
